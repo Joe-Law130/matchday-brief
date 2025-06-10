@@ -1,92 +1,71 @@
-import React, { useEffect, useState } from 'react';
-import { FaBars, FaSun, FaMoon, FaUser } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import Parser from 'rss-parser';
 import NewsCard from './components/NewsCard';
+import './index.css';
 
-function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    const stored = localStorage.getItem('theme');
-    return stored ? stored === 'dark' : false;
-  });
+const parser = new Parser();
+
+export default function App() {
   const [articles, setArticles] = useState([]);
-
-  const toggleDarkMode = () => {
-    const newTheme = !darkMode;
-    setDarkMode(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  };
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const fetchArticles = async () => {
+    const fetchFeed = async () => {
       try {
-        const res = await fetch('/.netlify/functions/bbcFootball');
-        const data = await res.json();
-        setArticles(data);
+        const CORS_PROXY = 'https://api.allorigins.win/get?url=';
+        const feedUrl = 'https://feeds.bbci.co.uk/sport/football/rss.xml';
+        const response = await fetch(`${CORS_PROXY}${encodeURIComponent(feedUrl)}`);
+        const data = await response.json();
+        const parsed = await parser.parseString(data.contents);
+        setArticles(parsed.items.slice(0, 10));
       } catch (error) {
-        console.error("RSS fetch failed", error);
+        console.error('Failed to fetch feed:', error);
       }
     };
 
-    fetchArticles();
+    fetchFeed();
   }, []);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-gray-800 dark:text-white">
+    <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-64 bg-gray-100 dark:bg-gray-900 shadow transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 z-50`}>
-        <div className="p-6 space-y-6 pt-16">
-          <a href="#" className="block hover:underline">Home</a>
-          <a href="#" className="block hover:underline">My News</a>
-          <a href="#" className="block hover:underline">Explore</a>
-          <a href="#" className="block hover:underline">Transfer</a>
+      <div className={`fixed top-0 left-0 z-30 h-full w-64 bg-white shadow transform transition-transform duration-300 ${menuOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0`}>
+        <div className="flex items-center justify-between p-4 border-b font-bold text-lg">
+          Matchday Brief
+          <button className="lg:hidden text-xl" onClick={() => setMenuOpen(false)}>✕</button>
         </div>
-        <div className="absolute bottom-4 left-4">
-          <button onClick={toggleDarkMode} className="text-xl">
-            {darkMode ? <FaSun /> : <FaMoon />}
-          </button>
-        </div>
+        <nav className="p-4 flex flex-col gap-4">
+          <a href="#" className="hover:text-blue-500">Home</a>
+          <a href="#" className="hover:text-blue-500">My News</a>
+          <a href="#" className="hover:text-blue-500">Explore</a>
+          <a href="#" className="hover:text-blue-500">Transfer</a>
+        </nav>
+        <div className="absolute bottom-4 w-full px-4 text-sm text-gray-400">© 2025 Matchday Brief</div>
       </div>
 
-      {/* Header */}
-      <header className="relative flex items-center justify-center p-4 bg-gray-200 dark:bg-gray-900 shadow-md">
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="absolute left-4 text-xl text-gray-800 dark:text-white">
-          <FaBars />
-        </button>
-        <div className="flex items-center space-x-2">
-          <h1 className="text-2xl font-bold">Matchday Brief</h1>
-          <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
-        </div>
-        <button className="absolute right-4 text-xl text-gray-800 dark:text-white">
-          <FaUser />
-        </button>
-      </header>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="flex items-center justify-between bg-white p-4 shadow sticky top-0 z-10">
+          <button onClick={() => setMenuOpen(true)} className="lg:hidden text-2xl">☰</button>
+          <div className="text-xl font-bold mx-auto">Matchday Brief</div>
+          <div className="w-8" /> {/* Spacer for alignment */}
+        </header>
 
-      {/* Breaking News Bar */}
-      <div className="overflow-hidden whitespace-nowrap bg-gray-300 dark:bg-gray-800 text-black dark:text-white py-2 px-4 text-sm font-semibold">
-        <div className="animate-marquee-slow">
-          Breaking: Latest football updates from BBC Sport...
+        {/* Breaking News Bar */}
+        <div className="bg-yellow-100 text-yellow-900 px-4 py-2 overflow-hidden whitespace-nowrap">
+          <marquee behavior="scroll" direction="left" scrollamount="5">
+            {articles.length > 0 ? articles.map((item, idx) => `${item.title}   |   `) : 'Loading breaking news...'}
+          </marquee>
         </div>
+
+        {/* Article Grid */}
+        <main className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {articles.map((item, idx) => (
+            <NewsCard key={idx} item={item} />
+          ))}
+        </main>
       </div>
-
-      {/* Articles */}
-      <main className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-        {articles.map((article, index) => (
-          <NewsCard
-            key={index}
-            title={article.title}
-            source={article.source}
-            published={article.published}
-          />
-        ))}
-      </main>
-
-      {/* Footer */}
-      <footer className="text-center text-sm p-4 border-t dark:border-gray-700 border-gray-200">
-        © 2025 Matchday Brief. All rights reserved.
-      </footer>
     </div>
   );
 }
-
-export default App;

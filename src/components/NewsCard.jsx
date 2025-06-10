@@ -1,13 +1,11 @@
 import React from 'react';
 
-function NewsCard({ title, source, published }) {
+export default function NewsCard({ item }) {
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-xl transition duration-300">
-      <h2 className="text-lg font-bold mb-2">{title}</h2>
-      <p className="text-sm text-gray-600 dark:text-gray-300">{new Date(published).toLocaleString()}</p>
-      <a href={source} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-300 mt-2 inline-block">Read more</a>
-    </div>
+    <a href={item.link} target="_blank" rel="noopener noreferrer" className="block bg-white rounded shadow hover:shadow-lg transition p-4">
+      <h2 className="text-lg font-semibold">{item.title}</h2>
+      <p className="text-sm text-gray-600 mt-2">{item.contentSnippet?.slice(0, 120)}...</p>
+      <p className="text-xs text-gray-400 mt-2">{new Date(item.pubDate).toLocaleString()}</p>
+    </a>
   );
 }
-
-export default NewsCard;
