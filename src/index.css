@@ -4,4 +4,16 @@
 
 body {
   font-family: system-ui, sans-serif;
+@keyframes marquee-slow {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
 }
+.animate-marquee-slow {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee-slow 30s linear infinite;
+}
+
+
+}
+
